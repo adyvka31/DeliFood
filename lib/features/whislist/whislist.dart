@@ -1,0 +1,1 @@
+export 'whislist_screen.dart';
