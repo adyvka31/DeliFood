@@ -1,7 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_mobile/components/app_back_button.dart';
 import 'package:ecommerce_mobile/features/cart/screens/input_adress_screen.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
+import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -11,7 +14,15 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  String? _appliedCoupon;
+  final DatabaseService _dbService = DatabaseService();
+
+  String formatRupiah(int price) {
+    return NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(price);
+  }
 
   void showModal() {
     showModalBottomSheet(
@@ -50,195 +61,99 @@ class _CartScreenState extends State<CartScreen> {
           child: Container(),
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(top: 25, left: 25, right: 25),
-        children: [
-          basketItem(
-            "Quinoa Fruit Salad",
-            'assets/images/detail-food.png',
-            "2 Packs",
-            "Rp 20.000",
-          ),
-          SizedBox(height: 16),
-          basketItem(
-            "Melon Fruit Salad",
-            'assets/images/combo1.png',
-            "1 Packs",
-            "Rp 15.000",
-          ),
-          SizedBox(height: 16),
-          basketItem(
-            "Tropical Fruit Salad",
-            'assets/images/combo2.png',
-            "1 Packs",
-            "Rp 10.000",
-          ),
-          SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0D202020),
-                  spreadRadius: -5,
-                  blurRadius: 30,
-                  offset: Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.discount_outlined,
-                      color: MainColors.secondaryColor,
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      "Promo Code",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_appliedCoupon == null) {
-                      final String? couponCode =
-                          await showModalBottomSheet<String>(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (context) {
-                              return const CouponInputSheet();
-                            },
-                          );
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _dbService.getCart(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
 
-                      // Setelah modal ditutup, perbarui state jika ada hasilnya
-                      if (couponCode != null && couponCode.isNotEmpty) {
-                        setState(() {
-                          _appliedCoupon = couponCode;
-                        });
-                      }
-                    } else {
-                      // Jika sudah ada kupon, aksi ini akan menghapusnya
-                      setState(() {
-                        _appliedCoupon = null;
-                      });
-                    }
+          var cartDocs = snapshot.data!.docs;
+
+          if (cartDocs.isEmpty) {
+            return Center(child: Text("Keranjang Kosong"));
+          }
+
+          // Hitung Total Belanja
+          int subTotal = 0;
+          for (var doc in cartDocs) {
+            subTotal += (doc['price'] as int) * (doc['quantity'] as int);
+          }
+          int deliveryFee = 8000;
+          int total = subTotal + deliveryFee;
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.all(25),
+                  itemCount: cartDocs.length,
+                  itemBuilder: (context, index) {
+                    var data = cartDocs[index].data() as Map<String, dynamic>;
+                    var docId = cartDocs[index].id;
+
+                    return Dismissible(
+                      key: Key(docId),
+                      onDismissed: (_) => _dbService.removeFromCart(docId),
+                      background: Container(
+                        color: Colors.red,
+                        child: Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        // ... Gunakan Container basketItem lama Anda tapi dengan data dinamis ...
+                        child: Row(
+                          children: [
+                            Image.network(
+                              data['image'],
+                              width: 90,
+                              height: 90,
+                            ), // Gunakan Network Image
+                            // ... Tampilkan Nama & Harga (data['name'], data['price'])
+                          ],
+                        ),
+                      ),
+                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: MainColors.secondaryColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                  ),
-                  child: Text(_appliedCoupon ?? "Apply"),
                 ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0D202020),
-                  spreadRadius: -5,
-                  blurRadius: 30,
-                  offset: Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Subtotal", style: TextStyle(color: Colors.grey[600])),
-                    Text(
-                      "Rp 60.000",
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Divider(
-                    color: Colors.grey.withOpacity(0.3),
-                    thickness: 0.5,
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Delivery", style: TextStyle(color: Colors.grey[600])),
-                    Text(
-                      "Rp 8.000",
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  child: Divider(
-                    color: Colors.grey.withOpacity(0.3),
-                    thickness: 0.5,
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Total",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      "Rp 68.000",
-                      style: TextStyle(
-                        color: MainColors.secondaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              showModal();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: MainColors.secondaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
               ),
-            ),
-            child: Text(
-              "Checkout",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
+
+              // Bagian Total & Checkout
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Total"),
+                        Text(
+                          formatRupiah(total),
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Fitur BELI SEMUA / Checkout
+                        await _dbService.checkout(total);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Order Successful!")),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: MainColors.secondaryColor,
+                        minimumSize: Size(double.infinity, 50),
+                      ),
+                      child: Text("Checkout All Items"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

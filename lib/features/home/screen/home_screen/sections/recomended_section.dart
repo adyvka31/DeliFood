@@ -14,7 +14,7 @@ class RecomendedSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     "Recomended Combo",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
@@ -23,39 +23,65 @@ class RecomendedSection extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => DetailPage()),
+        const SizedBox(height: 20),
+
+        // MENGGANTI DATA DUMMY DENGAN STREAM BUILDER
+        SizedBox(
+          height: 210, // Tinggi area scroll horizontal
+          child: StreamBuilder<List<ItemFoodModel>>(
+            // Mengambil produk dengan kategori 'Combo'
+            stream: DatabaseService().getProducts(""),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text("Error loading data"));
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final products = snapshot.data!;
+
+              if (products.isEmpty) {
+                return const Center(
+                  child: Text(
+                    "No Combo available",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 25,
+                  vertical: 10,
+                ),
+                scrollDirection: Axis.horizontal,
+                itemCount: products.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 20),
+                itemBuilder: (context, index) {
+                  final item = products[index];
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailPage(
+                            model: item, // Mengirim data asli dari Firebase
+                          ),
+                        ),
+                      );
+                    },
+                    child: CardFood(
+                      title: item.title,
+                      price: item
+                          .formattedPrice, // Menggunakan format harga dari model
+                      imagePath: item.imagepath,
+                    ),
                   );
                 },
-                child: CardFood(
-                  title: 'Honey lime combo',
-                  price: 'Rp 2.000',
-                  imagePath: 'assets/images/combo1.png',
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => DetailPage()),
-                  );
-                },
-                child: CardFood(
-                  title: 'Bery mango combo',
-                  price: 'Rp 8.000',
-                  imagePath: 'assets/images/combo2.png',
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ],

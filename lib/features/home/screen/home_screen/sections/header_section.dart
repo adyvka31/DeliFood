@@ -2,8 +2,13 @@ part of '../home_screen.dart';
 
 class HeaderSection extends StatelessWidget {
   final VoidCallback onNotificationTap;
+  final Function(String) onSearchChanged;
 
-  const HeaderSection({super.key, required this.onNotificationTap});
+  const HeaderSection({
+    super.key,
+    required this.onNotificationTap,
+    required this.onSearchChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +73,7 @@ class HeaderSection extends StatelessWidget {
             children: [
               Expanded(
                 child: TextFormField(
+                  onChanged: onSearchChanged,
                   decoration: InputDecoration(
                     fillColor: Colors.white,
                     filled: true,
