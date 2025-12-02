@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "733328694408",
+    "project_id": "delifood-8d961",
+    "storage_bucket": "delifood-8d961.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:733328694408:android:37828a5aadd89c5c60533d",
+        "android_client_info": {
+          "package_name": "com.example.ecommerce_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATChHegifPA_NWzxwKcuXKDLu3f-_tM20"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
