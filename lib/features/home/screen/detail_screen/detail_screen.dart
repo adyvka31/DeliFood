@@ -1,181 +1,156 @@
-import 'package:ecommerce_mobile/components/app_back_button.dart';
 import 'package:ecommerce_mobile/features/cart/screens/cart_screen.dart';
 import 'package:ecommerce_mobile/features/cart/screens/input_adress_screen.dart';
+import 'package:ecommerce_mobile/features/home/model/item_modal.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
+import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
 
 part 'sections/body_section.dart';
 part 'sections/footer_section.dart';
 
 class DetailPage extends StatefulWidget {
-  const DetailPage({super.key});
+  final ItemFoodModel model;
+
+  const DetailPage({super.key, required this.model});
 
   @override
   State<DetailPage> createState() => _DetailPageState();
 }
 
 class _DetailPageState extends State<DetailPage> {
-  final List<String> _otherImages = [
-    'assets/images/detail-food.png',
-    'assets/images/combo2.png',
-    'assets/images/hotest1.png',
-    'assets/images/hotest2.png',
-  ];
-
-  int _selectedIndex = 0;
-  bool _isFavorited = false;
+  bool isFavorite = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              color: Colors.grey[100],
-              height: 450,
-              child: Stack(
+      backgroundColor: MainColors.secondaryColor,
+      body: Column(
+        children: [
+          // --- HEADER (Custom Back Button & Title) ---
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Align(
-                    alignment: Alignment(0.0, 0.3),
-                    child: Image.asset(
-                      _otherImages[_selectedIndex],
-                      width: 250,
-                      height: 250,
-                      fit: BoxFit.contain,
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                  ),
+                  Text(
+                    "Details",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 65,
-                      left: 30,
-                      right: 30,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        AppBackButton(),
-                        Text(
-                          "Product Details",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isFavorited = !_isFavorited;
-                              });
-                            },
-                            child: Icon(
-                              _isFavorited
-                                  ? Icons.favorite
-                                  : Icons.favorite_border_rounded,
-                              color: _isFavorited
-                                  ? const Color(0xff047884)
-                                  : Color(0xff047884),
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 30,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 36),
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            spreadRadius: -5,
-                            blurRadius: 15,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Wrap(
-                        spacing: 6.0,
-                        alignment: WrapAlignment.center,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          ...List.generate(4, (index) {
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedIndex = index;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: _selectedIndex == index
-                                        ? MainColors.secondaryColor
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: ClipRRect(
-                                  child: Image.asset(
-                                    _otherImages[index],
-                                    width: 43,
-                                    height: 43,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                          Container(
-                            width: 65,
-                            height: 65,
-                            decoration: BoxDecoration(
-                              color: MainColors.secondaryColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Text(
-                                "+10",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+
+                  // FAVORITE BUTTON (Real Logic)
+                  IconButton(
+                    onPressed: () {
+                      DatabaseService().toggleWhislist(widget.model);
+                      setState(() => isFavorite = !isFavorite);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Wishlist updated!")),
+                      );
+                    },
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
-            BodySection(),
-            FooterSection(onShowSuccessDialog: () {}),
-          ],
-        ),
+          ),
+
+          // --- BODY (Image & Info) ---
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Image.network(widget.model.imagepath, height: 200),
+                    ), // Use Network Image
+                    SizedBox(height: 20),
+                    Text(
+                      widget.model.title,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      widget.model.formattedPrice,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: MainColors.secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "Description",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Delicious food specifically made for you with high-quality ingredients.",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    Spacer(),
+
+                    // --- ADD TO CART BUTTON (Real Logic) ---
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await DatabaseService().addToCart(widget.model);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: MainColors.secondaryColor,
+                                content: Text("Added to Basket!"),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MainColors.secondaryColor,
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          "Add to Cart",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

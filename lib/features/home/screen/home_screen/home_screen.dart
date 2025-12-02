@@ -1,5 +1,7 @@
+import 'package:ecommerce_mobile/features/home/model/item_modal.dart';
 import 'package:ecommerce_mobile/features/home/screen/detail_screen/detail_screen.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
+import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
 part 'sections/header_section.dart';
 part 'sections/special_section.dart';
@@ -59,15 +61,12 @@ void showSuccessDialog(BuildContext context) {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => DetailPage()),
-                    );
+                    // Close dialog and go back to Home
+                    Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: MainColors.secondaryColor,
                     foregroundColor: Colors.white,
-                    elevation: 0,
                   ),
                   child: Text(
                     "Use my coupon",
@@ -97,11 +96,17 @@ void showSuccessDialog(BuildContext context) {
   );
 }
 
-class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key, required this.name});
-
+class HomeScreen extends StatefulWidget {
   final String name;
 
+  HomeScreen({super.key, required this.name});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _searchQuery = "";
   final List<String> category = [
     "Hottest",
     "Popular",
@@ -198,21 +203,84 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Builder(
         builder: (context) {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                HeaderSection(
-                  onNotificationTap: () {
-                    Scaffold.of(context).openEndDrawer();
-                  },
-                ),
-                SpecialSection(),
-                SizedBox(height: 20),
-                RecomendedSection(),
-                SizedBox(height: 40),
-                FilteredItemSection(category: category),
-              ],
-            ),
+          return Column(
+            children: [
+              // 1. HEADER SECTION (With Search Callback)
+              HeaderSection(
+                onNotificationTap: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+                onSearchChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              ),
+
+              // 2. DYNAMIC BODY
+              Expanded(
+                child: _searchQuery.isEmpty
+                    // A. NORMAL VIEW (No Search)
+                    ? SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            SpecialSection(),
+                            SizedBox(height: 20),
+                            RecomendedSection(),
+                            SizedBox(height: 40),
+                            FilteredItemSection(category: category),
+                            SizedBox(height: 100),
+                          ],
+                        ),
+                      )
+                    // B. SEARCH RESULTS VIEW
+                    : StreamBuilder<List<ItemFoodModel>>(
+                        stream: DatabaseService().getProducts(_searchQuery),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError)
+                            return Center(child: Text("Error"));
+                          if (!snapshot.hasData)
+                            return Center(child: CircularProgressIndicator());
+
+                          final products = snapshot.data!;
+                          if (products.isEmpty)
+                            return Center(child: Text("Product not found"));
+
+                          return GridView.builder(
+                            padding: EdgeInsets.all(20),
+                            itemCount: products.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 15,
+                                  crossAxisSpacing: 15,
+                                  childAspectRatio: 0.75,
+                                ),
+                            itemBuilder: (context, index) {
+                              final item = products[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DetailPage(
+                                        model: item,
+                                      ), // Pass the Model here!
+                                    ),
+                                  );
+                                },
+                                child: CardFood(
+                                  title: item.title,
+                                  price: "Rp ${item.price}",
+                                  imagePath: item.imagepath,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
