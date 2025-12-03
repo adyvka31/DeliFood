@@ -8,7 +8,7 @@ import 'package:ecommerce_mobile/prefrences/color.dart';
 // Asumsikan LoginPage ada di sini (untuk navigasi)
 
 class SignupPage extends StatefulWidget {
-  const SignupPage({super.key}); 
+  const SignupPage({super.key});
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -27,11 +27,12 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  
+
   // State untuk Date Picker dan Loading
-  DateTime? _selectedDate; 
+  DateTime? _selectedDate;
   bool _isLoading = false;
 
   // --- Fungsi Date Picker ---
@@ -47,7 +48,8 @@ class _SignupPageState extends State<SignupPage> {
       setState(() {
         _selectedDate = picked;
         // Format tanggal (DD/MM/YYYY)
-        _dateController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}"; 
+        _dateController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -68,7 +70,7 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _signUp() async {
     // Validasi form lokal
     if (!_formKey.currentState!.validate()) {
-      return; 
+      return;
     }
 
     setState(() {
@@ -77,10 +79,11 @@ class _SignupPageState extends State<SignupPage> {
 
     try {
       // 1. Firebase Authentication (Membuat Pengguna Baru)
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       // 2. Menyimpan Data Tambahan ke Firestore
       if (userCredential.user != null) {
@@ -92,7 +95,7 @@ class _SignupPageState extends State<SignupPage> {
           'address': _addressController.text.trim(), // Alamat Singkat
           'createdAt': FieldValue.serverTimestamp(),
         });
-        
+
         _showSnackBar("Pendaftaran berhasil! Selamat datang.");
 
         // 3. Navigasi ke MainScreen setelah sukses
@@ -106,9 +109,11 @@ class _SignupPageState extends State<SignupPage> {
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       if (e.code == 'weak-password') {
-        errorMessage = 'Password terlalu lemah. Gunakan kombinasi yang lebih kuat.';
+        errorMessage =
+            'Password terlalu lemah. Gunakan kombinasi yang lebih kuat.';
       } else if (e.code == 'email-already-in-use') {
-        errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau Login.';
+        errorMessage =
+            'Email sudah terdaftar. Silakan gunakan email lain atau Login.';
       } else {
         errorMessage = 'Gagal mendaftar: ${e.message}';
       }
@@ -116,7 +121,7 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       _showSnackBar('Terjadi kesalahan tak terduga: $e', isError: true);
     } finally {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -136,19 +141,21 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   // Definisikan style UnderlineInputBorder agar lebih rapi
-  UnderlineInputBorder get _defaultInputBorder => const UnderlineInputBorder(
-    borderSide: BorderSide(color: Colors.grey),
-  );
+  UnderlineInputBorder get _defaultInputBorder =>
+      const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey));
   UnderlineInputBorder get _focusedInputBorder => UnderlineInputBorder(
-    borderSide: BorderSide(color: MainColors.secondaryColor, width: 2), // Sekarang membuat UnderlineInputBorder
+    borderSide: BorderSide(
+      color: MainColors.secondaryColor,
+      width: 2,
+    ), // Sekarang membuat UnderlineInputBorder
   );
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MainColors.secondaryColor,
-      body: SingleChildScrollView( // Mencegah overflow
+      body: SingleChildScrollView(
+        // Mencegah overflow
         child: Column(
           children: [
             // Bagian Header (SignUp)
@@ -158,7 +165,9 @@ class _SignupPageState extends State<SignupPage> {
               decoration: BoxDecoration(
                 color: MainColors.secondaryColor,
                 image: const DecorationImage(
-                  image: AssetImage("assets/images/bg-login.jpg"), // Pastikan aset tersedia
+                  image: AssetImage(
+                    "assets/images/bg-login.jpg",
+                  ), // Pastikan aset tersedia
                   fit: BoxFit.cover,
                   opacity: 0.05,
                 ),
@@ -174,7 +183,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
             ),
-            
+
             // Bagian Form
             Container(
               padding: const EdgeInsets.all(40),
@@ -188,7 +197,13 @@ class _SignupPageState extends State<SignupPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 1. Full Name
-                    const Text("Name", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Name",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _nameController,
                       validator: (value) {
@@ -207,7 +222,13 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 24),
 
                     // 2. Email (Wajib diisi)
-                    const Text("Email", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Email",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -216,7 +237,7 @@ class _SignupPageState extends State<SignupPage> {
                           return 'Email wajib diisi.';
                         }
                         if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                            return 'Masukkan format email yang valid.';
+                          return 'Masukkan format email yang valid.';
                         }
                         return null;
                       },
@@ -229,12 +250,18 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // 3. Tanggal Lahir 
-                    const Text("Tanggal Lahir", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    // 3. Tanggal Lahir
+                    const Text(
+                      "Tanggal Lahir",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _dateController,
-                      readOnly: true, 
-                      onTap: () => _selectDate(context), 
+                      readOnly: true,
+                      onTap: () => _selectDate(context),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Tanggal lahir wajib diisi.';
@@ -252,7 +279,13 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 24),
 
                     // 4. Address Singkat
-                    const Text("Alamat Singkat", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Alamat Singkat",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _addressController,
                       validator: (value) {
@@ -271,7 +304,13 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 24),
 
                     // 5. Password
-                    const Text("Password", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Password",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
@@ -294,7 +333,13 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 24),
 
                     // 6. Confirm Password
-                    const Text("Confirm Password", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Confirm Password",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     TextFormField(
                       controller: _confirmPasswordController,
                       obscureText: true,
@@ -318,11 +363,16 @@ class _SignupPageState extends State<SignupPage> {
 
                     // Tombol Sign Up
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _signUp, // Nonaktifkan saat loading
+                      onPressed: _isLoading
+                          ? null
+                          : _signUp, // Nonaktifkan saat loading
                       style: ElevatedButton.styleFrom(
                         elevation: 0,
                         backgroundColor: MainColors.secondaryColor,
-                        minimumSize: const Size(double.infinity, 50), // Lebar penuh
+                        minimumSize: const Size(
+                          double.infinity,
+                          50,
+                        ), // Lebar penuh
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -338,12 +388,16 @@ class _SignupPageState extends State<SignupPage> {
                             )
                           : const Text(
                               "Sign Up",
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                     ),
-                    
-                    const SizedBox(height: 25), 
-                    
+
+                    const SizedBox(height: 25),
+
                     // Teks "Already have an account?"
                     Align(
                       alignment: Alignment.center,
@@ -351,7 +405,7 @@ class _SignupPageState extends State<SignupPage> {
                         "Already have an account?",
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[700], 
+                          color: Colors.grey[700],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -363,23 +417,35 @@ class _SignupPageState extends State<SignupPage> {
                     OutlinedButton(
                       onPressed: () {
                         // Navigasi ke halaman LoginPage (Menggunakan Onboarding2 sebagai placeholder login)
-                        Navigator.pushReplacement( 
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             // Ganti Onboarding2 dengan class LoginPage Anda yang sebenarnya
-                            builder: (context) =>  Onboarding2(name: _nameController.text), 
-                        ));
+                            builder: (context) =>
+                                Onboarding2(name: _nameController.text),
+                          ),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50), // Lebar penuh
-                        side: BorderSide(color: MainColors.secondaryColor, width: 2),
+                        minimumSize: const Size(
+                          double.infinity,
+                          50,
+                        ), // Lebar penuh
+                        side: BorderSide(
+                          color: MainColors.secondaryColor,
+                          width: 2,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: Text(
                         "Login",
-                        style: TextStyle(color: MainColors.secondaryColor, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: MainColors.secondaryColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 40),
