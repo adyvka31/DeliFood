@@ -5,6 +5,8 @@ import 'package:ecommerce_mobile/features/home/screen/detail_screen/detail_scree
 import 'package:ecommerce_mobile/prefrences/color.dart';
 import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
+import 'dart:math'; // Import untuk random waktu (opsional)
+
 part 'sections/header_section.dart';
 part 'sections/special_section.dart';
 part 'sections/recomended_section.dart';
@@ -26,7 +28,7 @@ void showSuccessDialog(BuildContext context) {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -35,16 +37,16 @@ void showSuccessDialog(BuildContext context) {
                   ),
                 ),
                 child: Container(
-                  padding: EdgeInsets.all(25),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(25),
+                  decoration: const BoxDecoration(
                     color: MainColors.secondaryColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.check, color: Colors.white, size: 50),
+                  child: const Icon(Icons.check, color: Colors.white, size: 50),
                 ),
               ),
-              SizedBox(height: 40),
-              Text(
+              const SizedBox(height: 40),
+              const Text(
                 "Congratulations!!!",
                 style: TextStyle(
                   fontSize: 28,
@@ -52,39 +54,37 @@ void showSuccessDialog(BuildContext context) {
                   color: Color(0xff1E222B),
                 ),
               ),
-              SizedBox(height: 7),
-              Text(
+              const SizedBox(height: 7),
+              const Text(
                 "Your coupon has been successfully claimed, let's use it immediately to get an attractive offer.",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Color(0xff878787), fontSize: 16),
               ),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Close dialog and go back to Home
                     Navigator.of(context).pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: MainColors.secondaryColor,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text(
+                  child: const Text(
                     "Use my coupon",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              SizedBox(height: 7),
+              const SizedBox(height: 7),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
-
-                  child: Text(
+                  child: const Text(
                     "See other offers",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
@@ -101,7 +101,7 @@ void showSuccessDialog(BuildContext context) {
 class HomeScreen extends StatefulWidget {
   final String name;
 
-  HomeScreen({super.key, required this.name});
+  const HomeScreen({super.key, required this.name});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -121,83 +121,110 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // --- DRAWER NOTIFIKASI DINAMIS ---
       endDrawer: Drawer(
+        backgroundColor: Colors.white,
         child: Column(
           children: [
-            // Header Kustom
+            // Header Drawer
             Container(
               width: double.infinity,
-              padding: EdgeInsets.only(top: 75, left: 20, bottom: 50),
+              padding: const EdgeInsets.only(top: 75, left: 20, bottom: 30),
               decoration: const BoxDecoration(color: MainColors.secondaryColor),
-              child: const Text(
-                'Notifications',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  NotificationItem(
-                    logoAsset: 'assets/images/pizzahut.png',
-                    title: 'Promo Spesial Pizza Hut!',
-                    subtitle:
-                        'Nikmati diskon 50% untuk pembelian kedua menu Large Pizza. Jangan sampai ketinggalan!',
-                    time: '5 menit yang lalu',
+                  Text(
+                    'Notifications',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Divider(height: 1, indent: 70),
-                  ),
-                  NotificationItem(
-                    logoAsset: 'assets/images/sturbucks.png',
-                    title: 'Starbucks: Minuman Favoritmu Menanti',
-                    subtitle:
-                        'Tukarkan 100 poin-mu dan dapatkan minuman gratis ukuran Tall. Berlaku hingga akhir bulan.',
-                    time: '2 jam yang lalu',
-                    isUnread: true,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Divider(height: 1, indent: 70),
-                  ),
-                  NotificationItem(
-                    logoAsset: 'assets/images/kfc.png',
-                    title: 'Pesananmu dari KFC Selesai',
-                    subtitle:
-                        'Pesanan #12345 dengan menu Super Besar 2 telah berhasil diselesaikan. Beri rating sekarang!',
-                    time: 'Kemarin',
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Divider(height: 1, indent: 70),
-                  ),
-                  NotificationItem(
-                    logoAsset: 'assets/images/jco.png',
-                    title: 'Pesanan J.CO sedang diantar',
-                    subtitle:
-                        'Pesanan #67890 dengan 1 lusin donat sedang dalam perjalanan menuju lokasimu.',
-                    time: '1 jam yang lalu',
-                    isUnread: true,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Divider(height: 1, indent: 70),
-                  ),
-                  NotificationItem(
-                    logoAsset:
-                        'assets/images/cfc.png', // Ganti dengan path logo Anda
-                    title: 'CFC Kembali!',
-                    subtitle:
-                        'Rasakan kembali sensasi pedas favoritmu. Tersedia untuk waktu terbatas di seluruh gerai.',
-                    time: '28 Agu 2025',
+                  SizedBox(height: 5),
+                  Text(
+                    'Update terbaru dari produk kami',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
+              ),
+            ),
+
+            // List Notifikasi dari Firebase
+            Expanded(
+              child: StreamBuilder<List<ItemFoodModel>>(
+                // Mengambil semua produk sebagai sumber notifikasi
+                stream: DatabaseService().getProducts(""),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Gagal memuat notifikasi"));
+                  }
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final products = snapshot.data!;
+
+                  if (products.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_off_outlined,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            "Belum ada notifikasi",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: EdgeInsets.only(top: 15),
+                    itemCount: products.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 10,
+                      indent: 70,
+                      color: Color.fromARGB(255, 228, 227, 227),
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = products[index];
+
+                      // Simulasi data notifikasi berdasarkan produk
+                      final bool isNew =
+                          index < 0; // 2 item teratas dianggap baru/unread
+
+                      return GestureDetector(
+                        onTap: () {
+                          // Tutup drawer lalu buka detail produk
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailPage(model: item),
+                            ),
+                          );
+                        },
+                        child: NotificationItem(
+                          logoAsset: item.imagepath, // Gambar produk
+                          title: "Promo Spesial: ${item.title}",
+                          subtitle:
+                              "Dapatkan penawaran menarik untuk ${item.title}. Stok terbatas!",
+                          time:
+                              "${Random().nextInt(12) + 1} jam yang lalu", // Simulasi waktu
+                          isUnread: isNew,
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -207,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) {
           return Column(
             children: [
-              // 1. HEADER SECTION (With Search Callback)
+              // 1. HEADER SECTION
               HeaderSection(
                 onNotificationTap: () {
                   Scaffold.of(context).openEndDrawer();
@@ -226,12 +253,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? SingleChildScrollView(
                         child: Column(
                           children: [
-                            SpecialSection(),
-                            SizedBox(height: 20),
-                            RecomendedSection(),
-                            SizedBox(height: 40),
+                            const SpecialSection(),
+                            const SizedBox(height: 20),
+                            const RecomendedSection(),
+                            const SizedBox(height: 40),
                             FilteredItemSection(category: category),
-                            SizedBox(height: 100),
+                            const SizedBox(height: 100),
                           ],
                         ),
                       )
@@ -239,20 +266,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     : StreamBuilder<List<ItemFoodModel>>(
                         stream: DatabaseService().getProducts(_searchQuery),
                         builder: (context, snapshot) {
-                          if (snapshot.hasError)
-                            return Center(child: Text("Error"));
-                          if (!snapshot.hasData)
-                            return Center(child: CircularProgressIndicator());
+                          if (snapshot.hasError) {
+                            return const Center(child: Text("Error"));
+                          }
+                          if (!snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
 
                           final products = snapshot.data!;
-                          if (products.isEmpty)
-                            return Center(child: Text("Product not found"));
+                          if (products.isEmpty) {
+                            return const Center(
+                              child: Text("Product not found"),
+                            );
+                          }
 
                           return GridView.builder(
-                            padding: EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
                             itemCount: products.length,
                             gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   mainAxisSpacing: 15,
                                   crossAxisSpacing: 15,
@@ -265,17 +299,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => DetailPage(
-                                        model: item,
-                                      ), // Pass the Model here!
+                                      builder: (context) =>
+                                          DetailPage(model: item),
                                     ),
                                   );
                                 },
                                 child: CardFood(
                                   title: item.title,
-                                  price: "Rp ${item.price}",
+                                  price: item.formattedPrice,
                                   imagePath: item.imagepath,
-
                                   model: item,
                                 ),
                               );
@@ -292,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// --- WIDGET NOTIFICATION ITEM (DIPERBARUI) ---
 class NotificationItem extends StatelessWidget {
   final String logoAsset;
   final String title;
@@ -310,47 +343,92 @@ class NotificationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cek apakah gambar dari internet atau aset lokal
+    final bool isNetworkImage = logoAsset.startsWith('http');
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: isUnread
+          ? const Color(0xFFF5F9FA)
+          : Colors.white, // Highlight unread
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(radius: 24, backgroundImage: AssetImage(logoAsset)),
-          SizedBox(width: 16),
+          // Gambar Bulat
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey[200],
+              image: DecorationImage(
+                image: isNetworkImage
+                    ? NetworkImage(logoAsset)
+                    : AssetImage(logoAsset) as ImageProvider,
+                fit: BoxFit.cover,
+                // Handle error jika gambar rusak
+                onError: (exception, stackTrace) {},
+              ),
+            ),
+            child: isNetworkImage
+                ? null
+                : null, // Placeholder bisa ditambahkan jika perlu
+          ),
+
+          const SizedBox(width: 16),
 
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: isUnread
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isUnread)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: MainColors.secondaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   subtitle,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: isUnread ? Colors.black54 : Colors.grey[500],
+                    fontSize: 13,
+                    height: 1.3,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   time,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 20),
-          if (isUnread)
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-            ),
         ],
       ),
     );
