@@ -22,6 +22,9 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Cek apakah gambar dari internet atau aset lokal
+    final isNetworkImage = widget.model.imagepath.startsWith('http');
+
     return Scaffold(
       backgroundColor: MainColors.secondaryColor,
       body: Column(
@@ -35,24 +38,25 @@ class _DetailPageState extends State<DetailPage> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   ),
-                  Text(
+                  const Text(
                     "Details",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  // FAVORITE BUTTON (Real Logic)
+                  // FAVORITE BUTTON
                   IconButton(
                     onPressed: () {
                       DatabaseService().toggleWhislist(widget.model);
                       setState(() => isFavorite = !isFavorite);
+
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Wishlist updated!")),
+                        const SnackBar(content: Text("Wishlist updated!")),
                       );
                     },
                     icon: Icon(
@@ -69,7 +73,7 @@ class _DetailPageState extends State<DetailPage> {
           Expanded(
             child: Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
@@ -78,42 +82,70 @@ class _DetailPageState extends State<DetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- PERBAIKAN GAMBAR DISINI ---
                     Center(
-                      child: Image.network(widget.model.imagepath, height: 200),
-                    ), // Use Network Image
-                    SizedBox(height: 20),
+                      child: Hero(
+                        tag: widget.model.imagepath, // Efek transisi halus
+                        child: isNetworkImage
+                            ? Image.network(
+                                widget.model.imagepath,
+                                height: 200,
+                                fit: BoxFit.contain,
+                                errorBuilder: (ctx, err, stack) => const Icon(
+                                  Icons.fastfood,
+                                  size: 100,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            : Image.asset(
+                                widget.model.imagepath,
+                                height: 200,
+                                fit: BoxFit.contain,
+                                errorBuilder: (ctx, err, stack) => const Icon(
+                                  Icons.fastfood,
+                                  size: 100,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    // -------------------------------
+                    const SizedBox(height: 20),
                     Text(
                       widget.model.title,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
                       widget.model.formattedPrice,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         color: MainColors.secondaryColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       "Description",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
-                      "Delicious food specifically made for you with high-quality ingredients.",
-                      style: TextStyle(color: Colors.grey),
+                      widget.model.description.isNotEmpty
+                          ? widget.model.description
+                          : "Delicious food specifically made for you with high-quality ingredients.",
+                      style: const TextStyle(color: Colors.grey, height: 1.5),
                     ),
-                    Spacer(),
+                    const Spacer(),
 
-                    // --- ADD TO CART BUTTON (Real Logic) ---
+                    // --- ADD TO CART BUTTON ---
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -121,7 +153,7 @@ class _DetailPageState extends State<DetailPage> {
                           await DatabaseService().addToCart(widget.model);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              const SnackBar(
                                 backgroundColor: MainColors.secondaryColor,
                                 content: Text("Added to Basket!"),
                               ),
@@ -130,12 +162,12 @@ class _DetailPageState extends State<DetailPage> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: MainColors.secondaryColor,
-                          padding: EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: Text(
+                        child: const Text(
                           "Add to Cart",
                           style: TextStyle(
                             color: Colors.white,

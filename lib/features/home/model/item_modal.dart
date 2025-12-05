@@ -8,6 +8,7 @@ class ItemFoodModel {
   final int price;
   final double rating;
   final String category;
+  final String description;
 
   ItemFoodModel({
     required this.id,
@@ -16,6 +17,7 @@ class ItemFoodModel {
     required this.price,
     this.rating = 0.0,
     this.category = 'General',
+    this.description = '',
   });
 
   String get formattedPrice {
@@ -41,6 +43,7 @@ class ItemFoodModel {
       imagepath: data['imagepath'] ?? 'assets/images/detail-food.png',
       rating: (data['rating'] ?? 0.0).toDouble(),
       category: data['category'] ?? 'General',
+      description: data['description'] ?? '',
     );
   }
 
@@ -51,6 +54,7 @@ class ItemFoodModel {
       'price': price,
       'rating': rating,
       'category': category,
+      'description': description,
     };
   }
 }
