@@ -123,6 +123,8 @@ class _FilteredItemSectionState extends State<FilteredItemSection> {
                         backgroundColor: index % 2 == 0
                             ? const Color.fromARGB(255, 235, 255, 250)
                             : const Color(0xffF1EFF6),
+
+                        model: item,
                       ),
                     );
                   },

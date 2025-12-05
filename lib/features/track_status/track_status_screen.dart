@@ -1,6 +1,9 @@
 import 'package:ecommerce_mobile/components/app_back_button.dart';
+import 'package:ecommerce_mobile/features/home/model/order_model.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
+import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TrackStatusScreen extends StatelessWidget {
   const TrackStatusScreen({super.key});
@@ -16,7 +19,7 @@ class TrackStatusScreen extends StatelessWidget {
             iconColor: Colors.white,
           ),
         ),
-        title: Text(
+        title: const Text(
           "Delivery Status",
           style: TextStyle(
             fontSize: 22,
@@ -30,200 +33,150 @@ class TrackStatusScreen extends StatelessWidget {
           child: Container(),
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.only(top: 25, left: 25, right: 25),
-        children: [
-          SizedBox(
-            height: 135,
-            child: ListView(
-              clipBehavior: Clip.none,
-              shrinkWrap: true,
-              scrollDirection: Axis.horizontal,
-              children: [
-                SizedBox(
-                  width: 380,
-                  child: OderItem(
-                    "Quinoa Fruit Salad",
-                    "2 Packs | 2 Kg | Normal",
-                    "Rp 20.000",
-                    'assets/images/detail-food.png',
-                  ),
-                ),
-                SizedBox(width: 25),
-                SizedBox(
-                  width: 380,
-                  child: OderItem(
-                    "Melon Fruit Salad",
-                    "1 Packs | 1 Kg | Normal",
-                    "Rp 15.000",
-                    'assets/images/combo1.png',
-                  ),
-                ),
-                SizedBox(width: 25),
-                SizedBox(
-                  width: 380,
-                  child: OderItem(
-                    "Tropical Fruit Salad",
-                    "1 Packs | 1 Kg | Normal",
-                    "Rp 10.000",
-                    'assets/images/combo2.png',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Column(
-                  children: [
-                    Icon(
-                      Icons.payments_outlined,
-                      size: 30,
-                      color: MainColors.secondaryColor,
-                    ),
-                    SizedBox(height: 13),
-                    Container(
-                      padding: EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: MainColors.secondaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: Colors.white, size: 13),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  width: 70,
-                  child: Divider(
-                    color: MainColors.secondaryColor.withOpacity(0.4),
-                    thickness: 2,
-                  ),
-                ),
-                Column(
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 30,
-                      color: MainColors.secondaryColor,
-                    ),
-                    SizedBox(height: 13),
-                    Container(
-                      padding: EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: MainColors.secondaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: Colors.white, size: 13),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  width: 70,
-                  child: Divider(
-                    color: Colors.grey[300]?.withOpacity(0.4),
-                    thickness: 2,
-                  ),
-                ),
-                Column(
-                  children: [
-                    Icon(
-                      Icons.local_shipping_outlined,
-                      size: 30,
-                      color: Colors.grey[300],
-                    ),
-                    SizedBox(height: 13),
-                    Container(
-                      padding: EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: Colors.white, size: 13),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  width: 70,
-                  child: Divider(
-                    color: Colors.grey[300]?.withOpacity(0.4),
-                    thickness: 2,
-                  ),
-                ),
-                Column(
-                  children: [
-                    Icon(
-                      Icons.person_outlined,
-                      size: 30,
-                      color: Colors.grey[300],
-                    ),
-                    SizedBox(height: 13),
-                    Container(
-                      padding: EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.check, color: Colors.white, size: 13),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 30),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      // [PERUBAHAN 1] Menggunakan StreamBuilder untuk data Realtime
+      body: StreamBuilder<OrderModel?>(
+        stream: DatabaseService().getLatestOrder(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text("Belum ada pesanan aktif"));
+          }
+
+          final order = snapshot.data!;
+
+          // Logika untuk menentukan progress bar aktif
+          int currentStep = 1;
+          if (order.status == 'Preparing') currentStep = 2;
+          if (order.status == 'Shipped') currentStep = 3;
+          if (order.status == 'Delivered') currentStep = 4;
+
+          return ListView(
+            padding: const EdgeInsets.only(top: 25, left: 25, right: 25),
             children: [
-              Text(
-                "Order Status Details",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 30),
-              OrderStatus(
-                "Order Has Arrived - May 21",
-                "Has arrived at the destination",
-                "04:30 PM",
-              ),
-              OrderStatus(
-                "Order In Transit - May 20",
-                "Orders are sorted in Depok City",
-                "05:00 AM",
-              ),
-              OrderStatus(
-                "Order Customs - May 20",
-                "Pesanan disortir di Kota Depok",
-                "02:00 AM",
-              ),
-              OrderStatus(
-                "Order Shipped - May 20",
-                "Courier assigned to pick up",
-                "11:15 PM",
+              // [PERUBAHAN 2] List Produk Horizontal Dinamis
+              SizedBox(
+                height: 135,
+                child: ListView.separated(
+                  clipBehavior: Clip.none,
+                  shrinkWrap: true,
+                  scrollDirection: Axis.horizontal,
+                  itemCount: order.items.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 25),
+                  itemBuilder: (context, index) {
+                    final item = order.items[index];
+                    int totalItemPrice =
+                        (item['price'] as int) * (item['quantity'] as int);
+                    // Format harga per item
+                    final price = NumberFormat.currency(
+                      locale: 'id',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    ).format(totalItemPrice);
+
+                    return SizedBox(
+                      width: 380,
+                      child: OderItem(
+                        item['title'] ?? 'Item',
+                        "${item['quantity']} Packs | Normal", // Deskripsi dinamis
+                        price,
+                        item['imagepath'] ?? '',
+                      ),
+                    );
+                  },
+                ),
               ),
 
-              OrderStatus(
-                "Order Is Packing - May 19",
-                "Order Made",
-                "09:00 PM",
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Step 1: Placed
+                    _buildStep(Icons.payments_outlined, 1, currentStep),
+                    _buildLine(1, currentStep),
+                    // Step 2: Preparing
+                    _buildStep(Icons.inventory_2_outlined, 2, currentStep),
+                    _buildLine(2, currentStep),
+                    // Step 3: Shipped
+                    _buildStep(Icons.local_shipping_outlined, 3, currentStep),
+                    _buildLine(3, currentStep),
+                    // Step 4: Delivered
+                    _buildStep(Icons.person_outlined, 4, currentStep),
+                  ],
+                ),
               ),
 
-              OrderStatus(
-                "Verified Payments - May 19",
-                "Payment Completed",
-                "07:30 PM",
-                isLast: true,
+              const SizedBox(height: 30),
+
+              // [PERUBAHAN 4] Timeline List Dinamis
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Order Status Details",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Mengambil data timeline dari Firebase (dibalik agar terbaru di atas)
+                  ...order.timeline.reversed.map((log) {
+                    final bool isLast = order.timeline.first == log;
+                    return OrderStatus(
+                      "${log['title']} - ${log['date']}",
+                      log['description'],
+                      log['time'],
+                      isLast: isLast,
+                    );
+                  }).toList(),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+
+  // --- Helper Widgets untuk menjaga Layout tetap sama tapi logic warnanya dinamis ---
+
+  Widget _buildStep(IconData icon, int index, int currentStep) {
+    // Jika step ini sudah dilewati, warnanya Hijau, jika belum Abu-abu
+    bool isActive = currentStep >= index;
+    Color color = isActive
+        ? MainColors.secondaryColor
+        : const Color(0xFFE0E0E0); // Grey[300]
+
+    return Column(
+      children: [
+        Icon(icon, size: 30, color: color),
+        const SizedBox(height: 13),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          child: const Icon(Icons.check, color: Colors.white, size: 13),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLine(int index, int currentStep) {
+    // Garis penghubung
+    bool isActive = currentStep > index;
+    Color color = isActive
+        ? MainColors.secondaryColor.withOpacity(0.4)
+        : const Color(0xFFE0E0E0).withOpacity(0.4);
+
+    return SizedBox(width: 70, child: Divider(color: color, thickness: 2));
+  }
 }
+
+// --- WIDGET ODERITEM & ORDERSTATUS (TIDAK ADA PERUBAHAN LAYOUT) ---
 
 class OderItem extends StatelessWidget {
   final String title;
@@ -241,12 +194,14 @@ class OderItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isNetworkImage = image.startsWith('http');
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x0D202020),
             spreadRadius: -5,
@@ -258,14 +213,26 @@ class OderItem extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               color: Colors.grey[200]?.withOpacity(0.5),
             ),
-            child: Image.asset(image, width: 90, height: 90),
+            child: isNetworkImage
+                ? Image.network(
+                    image,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.contain,
+                  )
+                : Image.asset(
+                    image,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.contain,
+                  ),
           ),
-          SizedBox(width: 18),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,9 +240,14 @@ class OderItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
                   description,
                   style: TextStyle(
@@ -284,10 +256,13 @@ class OderItem extends StatelessWidget {
                     color: Colors.grey[400],
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
                   price,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -320,7 +295,7 @@ class OrderStatus extends StatelessWidget {
         Column(
           children: [
             Container(
-              padding: EdgeInsets.all(5),
+              padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -329,8 +304,8 @@ class OrderStatus extends StatelessWidget {
                 ),
               ),
               child: Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
                   color: MainColors.secondaryColor,
                   shape: BoxShape.circle,
                 ),
@@ -346,18 +321,24 @@ class OrderStatus extends StatelessWidget {
               ),
           ],
         ),
-        SizedBox(width: 16),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  Spacer(),
+                  const SizedBox(width: 8),
                   Text(
                     time,
                     style: TextStyle(
@@ -368,7 +349,7 @@ class OrderStatus extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               Text(
                 description,
                 style: TextStyle(

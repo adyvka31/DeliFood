@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce_mobile/components/app_back_button.dart';
 import 'package:ecommerce_mobile/features/cart/screens/input_adress_screen.dart';
+import 'package:ecommerce_mobile/features/home/model/item_modal.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
 import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final DatabaseService _dbService = DatabaseService();
+  String? _appliedCoupon;
 
   String formatRupiah(int price) {
     return NumberFormat.currency(
@@ -24,13 +26,14 @@ class _CartScreenState extends State<CartScreen> {
     ).format(price);
   }
 
-  void showModal() {
+  void showModal(int total) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.45,
-          child: InputAdress(),
+          child: InputAdress(totalPrice: total),
         );
       },
     );
@@ -39,6 +42,7 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leadingWidth: 100,
         leading: Center(
@@ -47,7 +51,7 @@ class _CartScreenState extends State<CartScreen> {
             iconColor: Colors.white,
           ),
         ),
-        title: Text(
+        title: const Text(
           "My Basket",
           style: TextStyle(
             fontSize: 22,
@@ -64,16 +68,13 @@ class _CartScreenState extends State<CartScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: _dbService.getCart(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
+          }
 
           var cartDocs = snapshot.data!.docs;
 
-          if (cartDocs.isEmpty) {
-            return Center(child: Text("Keranjang Kosong"));
-          }
-
-          // Hitung Total Belanja
+          // Hitung Total
           int subTotal = 0;
           for (var doc in cartDocs) {
             subTotal += (doc['price'] as int) * (doc['quantity'] as int);
@@ -83,70 +84,258 @@ class _CartScreenState extends State<CartScreen> {
 
           return Column(
             children: [
+              // 1. LIST ITEM (SCROLLABLE - BAGIAN ATAS)
               Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.all(25),
-                  itemCount: cartDocs.length,
-                  itemBuilder: (context, index) {
-                    var data = cartDocs[index].data() as Map<String, dynamic>;
-                    var docId = cartDocs[index].id;
-
-                    return Dismissible(
-                      key: Key(docId),
-                      onDismissed: (_) => _dbService.removeFromCart(docId),
-                      background: Container(
-                        color: Colors.red,
-                        child: Icon(Icons.delete, color: Colors.white),
-                      ),
-                      child: Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        // ... Gunakan Container basketItem lama Anda tapi dengan data dinamis ...
-                        child: Row(
-                          children: [
-                            Image.network(
-                              data['image'],
-                              width: 90,
-                              height: 90,
-                            ), // Gunakan Network Image
-                            // ... Tampilkan Nama & Harga (data['name'], data['price'])
-                          ],
+                child: cartDocs.isEmpty
+                    ? const Center(child: Text("Keranjang Kosong"))
+                    : ListView(
+                        padding: const EdgeInsets.only(
+                          top: 25,
+                          left: 25,
+                          right: 25,
+                          bottom: 20,
                         ),
+                        children: cartDocs.map((doc) {
+                          var data = doc.data() as Map<String, dynamic>;
+                          var docId = doc.id;
+
+                          return Dismissible(
+                            key: Key(docId),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (_) {
+                              _dbService.removeFromCart(docId);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Item dihapus")),
+                              );
+                            },
+                            background: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
+                            ),
+                            child: _buildBasketItem(docId: docId, data: data),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  },
-                ),
               ),
 
-              // Bagian Total & Checkout
+              // 2. BOTTOM SECTION (STICKY - MENEMPEL DI BAWAH)
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 25,
+                  vertical: 20,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Total"),
-                        Text(
-                          formatRupiah(total),
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 15),
-                    ElevatedButton(
-                      onPressed: () async {
-                        // Fitur BELI SEMUA / Checkout
-                        await _dbService.checkout(total);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Order Successful!")),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MainColors.secondaryColor,
-                        minimumSize: Size(double.infinity, 50),
+                    // A. PROMO CODE CARD
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0D202020),
+                            spreadRadius: -5,
+                            blurRadius: 30,
+                            offset: Offset(0, 0),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.black, width: 0.1),
                       ),
-                      child: Text("Checkout All Items"),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(
+                                Icons.discount_outlined,
+                                color: MainColors.secondaryColor,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                "Promo Code",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_appliedCoupon == null) {
+                                final String? couponCode =
+                                    await showModalBottomSheet<String>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (context) {
+                                        return const CouponInputSheet();
+                                      },
+                                    );
+
+                                if (couponCode != null &&
+                                    couponCode.isNotEmpty) {
+                                  setState(() {
+                                    _appliedCoupon = couponCode;
+                                  });
+                                }
+                              } else {
+                                setState(() {
+                                  _appliedCoupon = null;
+                                });
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: MainColors.secondaryColor,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                            ),
+                            child: Text(_appliedCoupon ?? "Apply"),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // B. TOTAL PRICE CARD
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0D202020),
+                            spreadRadius: -5,
+                            blurRadius: 30,
+                            offset: Offset(0, 0),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.black, width: 0.1),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Subtotal",
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              Text(
+                                formatRupiah(subTotal),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Divider(
+                              color: Colors.grey.withOpacity(0.3),
+                              thickness: 0.5,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Delivery",
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              Text(
+                                formatRupiah(deliveryFee),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Divider(
+                              color: Colors.grey.withOpacity(0.3),
+                              thickness: 0.5,
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Total",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                formatRupiah(total),
+                                style: const TextStyle(
+                                  color: MainColors.secondaryColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // C. CHECKOUT BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (cartDocs.isNotEmpty) {
+                            showModal(total);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Keranjang kosong")),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MainColors.secondaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          "Checkout",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -158,18 +347,24 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Container basketItem(
-    String name,
-    String imagePath,
-    String quantity,
-    String price,
-  ) {
+  // WIDGET ITEM KERANJANG
+  Widget _buildBasketItem({
+    required String docId,
+    required Map<String, dynamic> data,
+  }) {
+    String imagePath = data['imagepath'] ?? '';
+    bool isNetworkImage = imagePath.startsWith('http');
+    String title = data['title'] ?? 'Item';
+    int price = data['price'] ?? 0;
+    int quantity = data['quantity'] ?? 1;
+
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x0D202020),
             spreadRadius: -5,
@@ -177,68 +372,120 @@ class _CartScreenState extends State<CartScreen> {
             offset: Offset(0, 0),
           ),
         ],
+        border: Border.all(color: Colors.black, width: 0.1),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               color: Colors.grey[200]?.withOpacity(0.5),
             ),
-            child: Image.asset(imagePath, width: 90, height: 90),
+            child: isNetworkImage
+                ? Image.network(
+                    imagePath,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.fastfood,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  )
+                : Image.asset(
+                    imagePath,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.fastfood,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  ),
           ),
-          SizedBox(width: 18),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
-                  quantity,
+                  "$quantity Packs",
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey[400],
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      price,
-                      style: TextStyle(
-                        fontSize: 16,
+                      formatRupiah(price * quantity),
+                      style: const TextStyle(
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Row(
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: MainColors.secondaryColor,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Icon(
-                            Icons.remove,
-                            color: Colors.white,
-                            size: 22,
+                        GestureDetector(
+                          onTap: () {
+                            if (quantity > 1) {
+                              _dbService.updateCartQuantity(
+                                docId,
+                                quantity - 1,
+                              );
+                            } else {
+                              _dbService.removeFromCart(docId);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Item dihapus")),
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: MainColors.secondaryColor,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: const Icon(
+                              Icons.remove,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
-                        SizedBox(width: 14),
-                        Text("1", style: TextStyle(fontSize: 16)),
-                        SizedBox(width: 14),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: MainColors.secondaryColor,
-                            borderRadius: BorderRadius.circular(5),
+                        const SizedBox(width: 12),
+                        Text("$quantity", style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () async {
+                            _dbService.updateCartQuantity(docId, quantity + 1);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: MainColors.secondaryColor,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
-                          child: Icon(Icons.add, color: Colors.white, size: 22),
                         ),
                       ],
                     ),
@@ -261,7 +508,6 @@ class CouponInputSheet extends StatefulWidget {
 }
 
 class _CouponInputSheetState extends State<CouponInputSheet> {
-  // Controller untuk mengambil teks dari form
   final _couponController = TextEditingController();
 
   @override
@@ -272,7 +518,6 @@ class _CouponInputSheetState extends State<CouponInputSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Padding ini penting agar keyboard tidak menutupi modal
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -281,7 +526,7 @@ class _CouponInputSheetState extends State<CouponInputSheet> {
         top: 40,
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Agar tinggi modal sesuai konten
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -299,7 +544,6 @@ class _CouponInputSheetState extends State<CouponInputSheet> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // Saat ditekan, tutup modal dan kirim teks sebagai "hasil"
                 Navigator.pop(context, _couponController.text);
               },
               style: ElevatedButton.styleFrom(

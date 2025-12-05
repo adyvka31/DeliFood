@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ecommerce_mobile/features/home/model/item_modal.dart';
 import 'package:ecommerce_mobile/features/home/screen/detail_screen/detail_screen.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
@@ -273,6 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   title: item.title,
                                   price: "Rp ${item.price}",
                                   imagePath: item.imagepath,
+
+                                  model: item,
                                 ),
                               );
                             },
@@ -508,6 +512,7 @@ class CardFood extends StatefulWidget {
   final String imagePath;
   final Color backgroundColor;
   final List<BoxShadow> boxShadow;
+  final ItemFoodModel? model;
 
   const CardFood({
     super.key,
@@ -525,6 +530,7 @@ class CardFood extends StatefulWidget {
         offset: Offset(0, 3),
       ),
     ],
+    this.model,
   });
 
   @override
@@ -532,10 +538,10 @@ class CardFood extends StatefulWidget {
 }
 
 class _CardFoodState extends State<CardFood> {
-  bool _isFavorited = false;
-
   @override
   Widget build(BuildContext context) {
+    final bool isNetworkImage = widget.imagePath.startsWith('http');
+
     return Container(
       width: widget.width,
       height: widget.height,
@@ -605,20 +611,59 @@ class _CardFoodState extends State<CardFood> {
           Positioned(
             top: 15,
             right: 15,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isFavorited = !_isFavorited;
-                });
-              },
-              child: Icon(
-                _isFavorited ? Icons.favorite : Icons.favorite_border_rounded,
-                color: _isFavorited
-                    ? const Color(0xff047884)
-                    : Color(0xff047884),
-                size: 24,
-              ),
-            ),
+            child: widget.model != null
+                ? StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .collection('wishlist')
+                        .where('title', isEqualTo: widget.model!.title)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      final isFavorited =
+                          snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          String message = isFavorited
+                              ? "Removed from Wishlist"
+                              : "Added to Wishlist";
+
+                          await DatabaseService().toggleWhislist(widget.model!);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).clearSnackBars(); // Hapus snackbar lama biar ga numpuk
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(message),
+                                duration: const Duration(seconds: 1),
+                                backgroundColor: isFavorited
+                                    ? Colors
+                                          .redAccent // Merah jika dihapus
+                                    : MainColors
+                                          .secondaryColor, // Hijau jika ditambah
+                              ),
+                            );
+                          }
+                        },
+                        child: Icon(
+                          isFavorited
+                              ? Icons.favorite
+                              : Icons.favorite_border_rounded,
+                          color: const Color(0xff047884),
+                          size: 24,
+                        ),
+                      );
+                    },
+                  )
+                : const Icon(
+                    // Fallback icon jika tidak ada model (misal di ProfileScreen)
+                    Icons.favorite_border_rounded,
+                    color: Color(0xff047884),
+                    size: 24,
+                  ),
           ),
         ],
       ),

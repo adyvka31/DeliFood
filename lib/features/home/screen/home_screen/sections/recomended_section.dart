@@ -77,6 +77,8 @@ class RecomendedSection extends StatelessWidget {
                       price: item
                           .formattedPrice, // Menggunakan format harga dari model
                       imagePath: item.imagepath,
+
+                      model: item,
                     ),
                   );
                 },

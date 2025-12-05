@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ecommerce_mobile/features/home/model/order_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../features/home/model/item_modal.dart';
 
 class DatabaseService {
@@ -29,7 +31,7 @@ class DatabaseService {
   }
 
   // 2. ADD TO CART (FIX DUPLICATE & QUANTITY)
-  Future<void> addToCart(ItemFoodModel item) async {
+  Future<void> addToCart(ItemFoodModel item, {int quantity = 1}) async {
     User? user = _auth.currentUser;
     if (user == null) return;
 
@@ -42,14 +44,32 @@ class DatabaseService {
       // UPDATE: Jika ada, tambah quantity +1
       var doc = existing.docs.first;
       int currentQty = doc['quantity'] ?? 1;
-      await doc.reference.update({'quantity': currentQty + 1});
+      await doc.reference.update({'quantity': currentQty + quantity});
     } else {
       // CREATE: Jika belum ada, buat baru
       await cartRef.add({
         ...item.toMap(),
-        'quantity': 1,
+        'quantity': quantity,
         'addedAt': FieldValue.serverTimestamp(),
       });
+    }
+  }
+
+  Future<void> updateCartQuantity(String docId, int newQuantity) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    if (newQuantity > 0) {
+      // Jika jumlah > 0, update datanya
+      await _db
+          .collection('users')
+          .doc(user.uid)
+          .collection('cart')
+          .doc(docId)
+          .update({'quantity': newQuantity});
+    } else {
+      // Jika jumlah jadi 0, hapus item tersebut
+      await removeFromCart(docId);
     }
   }
 
@@ -91,10 +111,20 @@ class DatabaseService {
       await doc.reference.delete();
     }
 
+    final initialTimeline = [
+      {
+        'title': 'Order Placed',
+        'description': 'We have received your order.',
+        'time': DateFormat('hh:mm a').format(DateTime.now()),
+        'date': DateFormat('MMM dd').format(DateTime.now()),
+      },
+    ];
+
     await _db.collection('users').doc(user.uid).collection('orders').add({
       'items': items,
       'total_price': totalPrice,
-      'status': 'Processing',
+      'status': 'Placed',
+      'timeline': initialTimeline,
       'order_date': FieldValue.serverTimestamp(),
     });
   }
@@ -161,7 +191,7 @@ class DatabaseService {
       'title': 'Honey lime combo',
       'price': 20000,
       'rating': 4.5,
-      'category': 'Hottest',
+      'category': 'Popular',
       'imagepath': 'assets/images/combo1.png',
       'description':
           'Nikmati kesegaran alami dari perpaduan Honey Lime Combo. Terbuat dari jeruk nipis pilihan yang diperas segar dan dicampur dengan madu murni berkualitas tinggi.',
@@ -198,5 +228,47 @@ class DatabaseService {
       await check2.docs.first.reference.update(data2);
       print("Item 2 berhasil di-update.");
     }
+
+    var check3 = await products
+        .where('title', isEqualTo: 'Quinoa Fruit Salad')
+        .limit(1)
+        .get();
+
+    final data3 = {
+      'title': 'Quinoa Fruit Salad',
+      'price': 10000,
+      'rating': 4.7,
+      'category': 'Hottest, New Combo', // Masuk kategori Hottest
+      'imagepath': 'assets/images/hotest1.png',
+      'description':
+          'Jika Anda mencari salad buah baru untuk dimakan hari ini, quinoa adalah pilihan tepat. Campuran superfood quinoa merah dengan jeruk nipis, madu, dan buah-buahan segar (blueberry, stroberi, mangga) memberikan rasa segar dan menyehatkan.',
+    };
+
+    if (check3.docs.isEmpty) {
+      await products.add(data3);
+      print("Item 3 (Quinoa) berhasil ditambahkan.");
+    } else {
+      await check3.docs.first.reference.update(data3);
+      print("Item 3 (Quinoa) berhasil di-update.");
+    }
+  }
+
+  // 11. GET LATEST ORDER (STREAM UNTUK TRACKING)
+  Stream<OrderModel?> getLatestOrder() {
+    User? user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    // Ambil 1 order paling baru
+    return _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('orders')
+        .orderBy('order_date', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.docs.isEmpty) return null;
+          return OrderModel.fromSnapshot(snapshot.docs.first);
+        });
   }
 }
