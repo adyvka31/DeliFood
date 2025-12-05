@@ -5,8 +5,32 @@ import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class TrackStatusScreen extends StatelessWidget {
+class TrackStatusScreen extends StatefulWidget {
   const TrackStatusScreen({super.key});
+
+  @override
+  State<TrackStatusScreen> createState() => _TrackStatusScreenState();
+}
+
+class _TrackStatusScreenState extends State<TrackStatusScreen> {
+  int _currentIndex = 0;
+  late PageController _pageController;
+  late Stream<OrderModel?> _orderStream;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi controller
+    _pageController = PageController(viewportFraction: 0.8);
+    _orderStream = DatabaseService().getLatestOrder();
+  }
+
+  @override
+  void dispose() {
+    // Hapus controller saat halaman ditutup agar hemat memori
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +57,9 @@ class TrackStatusScreen extends StatelessWidget {
           child: Container(),
         ),
       ),
-      // [PERUBAHAN 1] Menggunakan StreamBuilder untuk data Realtime
+      // Menggunakan StreamBuilder untuk data Realtime
       body: StreamBuilder<OrderModel?>(
-        stream: DatabaseService().getLatestOrder(),
+        stream: _orderStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -53,34 +77,35 @@ class TrackStatusScreen extends StatelessWidget {
           if (order.status == 'Delivered') currentStep = 4;
 
           return ListView(
-            padding: const EdgeInsets.only(top: 25, left: 25, right: 25),
+            padding: const EdgeInsets.only(top: 25, left: 25, right: 0),
             children: [
-              // [PERUBAHAN 2] List Produk Horizontal Dinamis
+              // List Produk Horizontal Dinamis
               SizedBox(
                 height: 135,
-                child: ListView.separated(
-                  clipBehavior: Clip.none,
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
+                child: PageView.builder(
+                  padEnds: false,
+                  controller: _pageController,
                   itemCount: order.items.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 25),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
                   itemBuilder: (context, index) {
                     final item = order.items[index];
                     int totalItemPrice =
                         (item['price'] as int) * (item['quantity'] as int);
-                    // Format harga per item
                     final price = NumberFormat.currency(
                       locale: 'id',
                       symbol: 'Rp ',
                       decimalDigits: 0,
                     ).format(totalItemPrice);
 
-                    return SizedBox(
-                      width: 380,
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 15),
                       child: OderItem(
                         item['title'] ?? 'Item',
-                        "${item['quantity']} Packs | Normal", // Deskripsi dinamis
+                        "${item['quantity']} Packs | Normal",
                         price,
                         item['imagepath'] ?? '',
                       ),
@@ -88,6 +113,28 @@ class TrackStatusScreen extends StatelessWidget {
                   },
                 ),
               ),
+
+              const SizedBox(height: 15),
+
+              if (order.items.length > 1) // Hanya muncul jika item > 1
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(order.items.length, (index) {
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      height: 6,
+                      // Jika aktif lebar 20 (panjang), jika tidak lebar 8 (bulat)
+                      width: _currentIndex == index ? 15 : 6,
+                      decoration: BoxDecoration(
+                        color: _currentIndex == index
+                            ? MainColors.secondaryColor
+                            : Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    );
+                  }),
+                ),
 
               const SizedBox(height: 30),
 
@@ -144,7 +191,6 @@ class TrackStatusScreen extends StatelessWidget {
   }
 
   // --- Helper Widgets untuk menjaga Layout tetap sama tapi logic warnanya dinamis ---
-
   Widget _buildStep(IconData icon, int index, int currentStep) {
     // Jika step ini sudah dilewati, warnanya Hijau, jika belum Abu-abu
     bool isActive = currentStep >= index;
