@@ -1,24 +1,34 @@
+import 'package:ecommerce_mobile/features/home/model/item_modal.dart';
 import 'package:ecommerce_mobile/features/track_status/track_status_screen.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
-import 'package:ecommerce_mobile/service/database_service.dart'; // IMPORT DATABASE SERVICE
+import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
 
 class InputAdress extends StatefulWidget {
-  final int totalPrice; // 1. TERIMA DATA TOTAL HARGA
+  final int totalPrice;
+  // Parameter tambahan untuk fitur Buy Now (langsung beli 1 barang)
+  final ItemFoodModel? singleItem;
+  final int? quantity;
 
-  const InputAdress({super.key, required this.totalPrice});
+  const InputAdress({
+    super.key,
+    required this.totalPrice,
+    this.singleItem,
+    this.quantity,
+  });
 
   @override
   State<InputAdress> createState() => _InputAdressState();
 }
 
 class _InputAdressState extends State<InputAdress> {
-  bool _isLoading = false; // Untuk loading indicator
+  bool _isLoading = false; // Untuk indikator loading
 
+  // Fungsi untuk menampilkan dialog sukses
   void showSuccessDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // User gabisa tutup sembarangan
+      barrierDismissible: false, // User tidak bisa menutup sembarangan
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.white,
@@ -73,7 +83,7 @@ class _InputAdressState extends State<InputAdress> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Tutup dialog, tutup modal, lalu pindah ke Track
+                      // Tutup dialog & modal, lalu pindah ke Track Status
                       Navigator.pop(context); // Tutup dialog
                       Navigator.pop(context); // Tutup modal sheet input address
 
@@ -116,6 +126,35 @@ class _InputAdressState extends State<InputAdress> {
     );
   }
 
+  // --- LOGIKA UTAMA: PROSES ORDER ---
+  Future<void> _processOrder() async {
+    setState(() => _isLoading = true);
+
+    try {
+      if (widget.singleItem != null && widget.quantity != null) {
+        await DatabaseService().checkoutBuyNow(
+          widget.singleItem!,
+          widget.quantity!,
+          widget.totalPrice,
+        );
+      } else {
+        await DatabaseService().checkout(widget.totalPrice);
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        showSuccessDialog(); // Tampilkan sukses
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Gagal memproses order: $e")));
+      }
+    }
+  }
+
   void showModaPayWithCard() {
     showModalBottomSheet(
       context: context,
@@ -146,18 +185,8 @@ class _InputAdressState extends State<InputAdress> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        // 2. LOGIKA TOMBOL COMPLETE ORDER (KARTU)
                         Navigator.pop(context); // Tutup modal kartu dulu
-
-                        setState(() => _isLoading = true); // Mulai loading
-
-                        // Panggil Database Checkout
-                        await DatabaseService().checkout(widget.totalPrice);
-
-                        if (mounted) {
-                          setState(() => _isLoading = false);
-                          showSuccessDialog(); // Tampilkan sukses
-                        }
+                        await _processOrder(); // Jalankan proses order
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 15),
@@ -196,18 +225,7 @@ class _InputAdressState extends State<InputAdress> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () async {
-                          // 3. LOGIKA TOMBOL PAY ON DELIVERY
-                          setState(() => _isLoading = true);
-
-                          // Panggil Database Checkout
-                          await DatabaseService().checkout(widget.totalPrice);
-
-                          if (mounted) {
-                            setState(() => _isLoading = false);
-                            showSuccessDialog();
-                          }
-                        },
+                        onPressed: _processOrder, // Panggil logika order
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
                             color: MainColors.secondaryColor,

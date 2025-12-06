@@ -589,7 +589,8 @@ class CardFood extends StatefulWidget {
   final String price;
   final String imagePath;
   final Color backgroundColor;
-  final List<BoxShadow> boxShadow;
+  final List<BoxShadow>? boxShadow;
+  final BoxBorder? border;
   final ItemFoodModel? model;
 
   const CardFood({
@@ -600,14 +601,8 @@ class CardFood extends StatefulWidget {
     required this.price,
     required this.imagePath,
     this.backgroundColor = Colors.white,
-    this.boxShadow = const [
-      BoxShadow(
-        color: Color(0x0D202020),
-        spreadRadius: 0,
-        blurRadius: 30,
-        offset: Offset(0, 3),
-      ),
-    ],
+    this.boxShadow,
+    this.border,
     this.model,
   });
 
@@ -618,6 +613,18 @@ class CardFood extends StatefulWidget {
 class _CardFoodState extends State<CardFood> {
   @override
   Widget build(BuildContext context) {
+    final effectiveShadow =
+        widget.boxShadow ??
+        (widget.border == null
+            ? [
+                const BoxShadow(
+                  color: Color(0x0D202020),
+                  spreadRadius: 0,
+                  blurRadius: 30,
+                  offset: Offset(0, 3),
+                ),
+              ]
+            : []);
     final bool isNetworkImage = widget.imagePath.startsWith('http');
 
     return Container(
@@ -627,6 +634,7 @@ class _CardFoodState extends State<CardFood> {
         borderRadius: BorderRadius.circular(16),
         color: widget.backgroundColor,
         boxShadow: widget.boxShadow,
+        border: widget.border,
       ),
       child: Stack(
         children: [

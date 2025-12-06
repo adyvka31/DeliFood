@@ -80,39 +80,66 @@ class _TrackStatusScreenState extends State<TrackStatusScreen> {
             padding: const EdgeInsets.only(top: 25, left: 25, right: 0),
             children: [
               // List Produk Horizontal Dinamis
-              SizedBox(
-                height: 135,
-                child: PageView.builder(
-                  padEnds: false,
-                  controller: _pageController,
-                  itemCount: order.items.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    final item = order.items[index];
-                    int totalItemPrice =
-                        (item['price'] as int) * (item['quantity'] as int);
-                    final price = NumberFormat.currency(
-                      locale: 'id',
-                      symbol: 'Rp ',
-                      decimalDigits: 0,
-                    ).format(totalItemPrice);
+              if (order.items.length == 1)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    right: 25,
+                  ), // Tambah padding kanan agar simetris (kiri sudah 25 dari ListView)
+                  child: Builder(
+                    builder: (context) {
+                      final item = order.items[0];
+                      int totalItemPrice =
+                          (item['price'] as int) * (item['quantity'] as int);
+                      final price = NumberFormat.currency(
+                        locale: 'id',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(totalItemPrice);
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: OderItem(
+                      return OderItem(
                         item['title'] ?? 'Item',
                         "${item['quantity']} Packs | Normal",
                         price,
                         item['imagepath'] ?? '',
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+                )
+              else
+                // JIKA ITEM > 1, GUNAKAN PAGEVIEW SEPERTI BIASA
+                SizedBox(
+                  height: 135,
+                  child: PageView.builder(
+                    padEnds: false,
+                    controller: _pageController,
+                    itemCount: order.items.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final item = order.items[index];
+                      int totalItemPrice =
+                          (item['price'] as int) * (item['quantity'] as int);
+                      final price = NumberFormat.currency(
+                        locale: 'id',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(totalItemPrice);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 15),
+                        child: OderItem(
+                          item['title'] ?? 'Item',
+                          "${item['quantity']} Packs | Normal",
+                          price,
+                          item['imagepath'] ?? '',
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 15),
 
@@ -139,7 +166,7 @@ class _TrackStatusScreenState extends State<TrackStatusScreen> {
               const SizedBox(height: 30),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.only(right: 25),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -162,26 +189,32 @@ class _TrackStatusScreenState extends State<TrackStatusScreen> {
               const SizedBox(height: 30),
 
               // [PERUBAHAN 4] Timeline List Dinamis
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Order Status Details",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.only(right: 25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Order Status Details",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
 
-                  // Mengambil data timeline dari Firebase (dibalik agar terbaru di atas)
-                  ...order.timeline.reversed.map((log) {
-                    final bool isLast = order.timeline.first == log;
-                    return OrderStatus(
-                      "${log['title']} - ${log['date']}",
-                      log['description'],
-                      log['time'],
-                      isLast: isLast,
-                    );
-                  }).toList(),
-                ],
+                    // Mengambil data timeline dari Firebase (dibalik agar terbaru di atas)
+                    ...order.timeline.reversed.map((log) {
+                      final bool isLast = order.timeline.first == log;
+                      return OrderStatus(
+                        "${log['title']} - ${log['date']}",
+                        log['description'],
+                        log['time'],
+                        isLast: isLast,
+                      );
+                    }).toList(),
+                  ],
+                ),
               ),
             ],
           );
@@ -247,14 +280,7 @@ class OderItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D202020),
-            spreadRadius: -5,
-            blurRadius: 30,
-            offset: Offset(0, 5),
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
       child: Row(
         children: [

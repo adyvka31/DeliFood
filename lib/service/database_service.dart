@@ -92,7 +92,7 @@ class DatabaseService {
         .delete();
   }
 
-  // 5. CHECKOUT
+  // 5. CHECKOUT (FROM CART)
   Future<void> checkout(int totalPrice) async {
     User? user = _auth.currentUser;
     if (user == null) return;
@@ -108,9 +108,38 @@ class DatabaseService {
     List<Map<String, dynamic>> items = [];
     for (var doc in cartSnapshot.docs) {
       items.add(doc.data());
-      await doc.reference.delete();
+      await doc.reference.delete(); // Menghapus item dari keranjang
     }
 
+    await _createOrder(user.uid, items, totalPrice);
+  }
+
+  // 5. CHECKOUT (FROM DETAIL PAGE)
+  // Fungsi ini menangani pembelian langsung tanpa masuk ke cart db dulu
+  Future<void> checkoutBuyNow(
+    ItemFoodModel item,
+    int quantity,
+    int totalPrice,
+  ) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    // Buat format item yang sama dengan struktur di Cart
+    Map<String, dynamic> itemData = item.toMap();
+    itemData['quantity'] = quantity;
+
+    List<Map<String, dynamic>> items = [itemData];
+
+    // Panggil fungsi pembantu untuk membuat order (tanpa menghapus cart)
+    await _createOrder(user.uid, items, totalPrice);
+  }
+
+  // [HELPER] Fungsi Private untuk membuat dokumen order (agar tidak duplikasi koding)
+  Future<void> _createOrder(
+    String uid,
+    List<Map<String, dynamic>> items,
+    int totalPrice,
+  ) async {
     final initialTimeline = [
       {
         'title': 'Order Placed',
@@ -120,7 +149,7 @@ class DatabaseService {
       },
     ];
 
-    await _db.collection('users').doc(user.uid).collection('orders').add({
+    await _db.collection('users').doc(uid).collection('orders').add({
       'items': items,
       'total_price': totalPrice,
       'status': 'Placed',

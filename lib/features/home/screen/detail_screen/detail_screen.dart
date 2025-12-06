@@ -111,7 +111,7 @@ class _DetailPageState extends State<DetailPage> {
       isScrollControlled: true,
       builder: (context) {
         return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.85, // Tinggikan modal
+          height: MediaQuery.of(context).size.height * 0.45, // Tinggikan modal
           child: InputAdress(totalPrice: totalBuyNow),
         );
       },

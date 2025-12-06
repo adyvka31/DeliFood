@@ -1,4 +1,4 @@
-import 'package:ecommerce_mobile/features/onboarding/onboarding.dart';
+import 'package:ecommerce_mobile/features/onboarding/onboarding2.dart';
 import 'package:ecommerce_mobile/prefrences/color.dart';
 import 'package:ecommerce_mobile/service/database_service.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const Onboarding()),
+        MaterialPageRoute(builder: (context) => const Onboarding2(name: '')),
         (route) => false,
       );
     }

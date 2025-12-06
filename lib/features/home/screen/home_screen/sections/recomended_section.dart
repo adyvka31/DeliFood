@@ -57,7 +57,7 @@ class RecomendedSection extends StatelessWidget {
                 ),
                 scrollDirection: Axis.horizontal,
                 itemCount: products.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 20),
+                separatorBuilder: (context, index) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final item = products[index];
 
@@ -73,12 +73,15 @@ class RecomendedSection extends StatelessWidget {
                       );
                     },
                     child: CardFood(
+                      width: 182,
                       title: item.title,
                       price: item
                           .formattedPrice, // Menggunakan format harga dari model
                       imagePath: item.imagepath,
-
                       model: item,
+                      backgroundColor: Colors.white,
+                      boxShadow: const [],
+                      border: Border.all(color: Colors.grey.shade300, width: 1),
                     ),
                   );
                 },
